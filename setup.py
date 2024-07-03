@@ -1,89 +1,172 @@
 import os
-import pathlib
-import platform
-import re
 import sys
+import platform
 import subprocess
-from distutils.version import LooseVersion
-from distutils.dir_util import copy_tree
-from setuptools import setup, Extension
+from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
+
+
+def get_version():
+    if os.getenv("RELEASE_VERSION"):
+        version = os.environ["RELEASE_VERSION"]
+    else:
+        with open(os.path.join(os.path.dirname(__file__), "version.txt"), "r") as f:
+            version = f.read().strip()
+    return version.lstrip("v")
+
+
+def read_readme():
+    """Read the contents of the README.md file"""
+    with open("README.md", "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def clean_cmake_cache(build_temp):
+    """Clean up CMakeCache.txt and related CMakeFiles directory."""
+    cache_file = os.path.join(build_temp, "CMakeCache.txt")
+    if os.path.exists(cache_file):
+        os.remove(cache_file)
+        cmake_files_dir = os.path.join(build_temp, "CMakeFiles")
+        if os.path.exists(cmake_files_dir):
+            import shutil
+
+            shutil.rmtree(cmake_files_dir)
+
+
+# Parse environment variables
+CMAKE_ENV_VARS = [
+    "CMAKE_TOOLCHAIN_FILE",
+    "PLATFORM",
+    "ARCHS",
+    "DEPLOYMENT_TARGET",
+    "OpenMP_C_FLAGS",
+    "OpenMP_CXX_FLAGS",
+    "OpenMP_C_LIB_NAMES",
+    "OpenMP_CXX_LIB_NAMES",
+    "OpenMP_libomp_LIBRARY",
+]
+cmake_env = {var: os.environ.get(var, "") for var in CMAKE_ENV_VARS}
+
+# Convert distutils Windows platform specifiers to CMake -A arguments
+PLAT_TO_CMAKE = {
+    "win32": "Win32",
+    "win-amd64": "x64",
+    "win-arm32": "ARM",
+    "win-arm64": "ARM64",
+}
 
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
-        super().__init__(name, sources=[])
+        Extension.__init__(self, name, sources=[])
         self.sourcedir = os.path.abspath(sourcedir)
 
 
 class CMakeBuild(build_ext):
-    def run(self):
-        try:
-            out = subprocess.check_output(["cmake", "--version"])
-        except OSError:
-            raise RuntimeError(
-                "CMake must be installed to build the following extensions: "
-                + ", ".join(e.name for e in self.extensions)
-            )
-
-        if platform.system() == "Windows":
-            cmake_version = LooseVersion(
-                re.search(r"cmake version (\d+\.\d+)", out.decode()).group(1)
-            )
-            if cmake_version < "3.1.0":
-                raise RuntimeError("CMake >= 3.1.0 is required on Windows")
-
-        for ext in self.extensions:
-            if isinstance(ext, CMakeExtension):
-                self.build_extension(ext)
-
     def build_extension(self, ext):
-        cwd = pathlib.Path().absolute()
+        print("Building extension '{}'".format(ext.sourcedir))
+        extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
 
-        build_temp = pathlib.Path(self.build_temp).joinpath(ext.name)
-        if not os.path.exists(build_temp):
-            os.makedirs(build_temp)
+        # Ensure the extension is built directly in the package directory
+        extdir = os.path.join(extdir, "pynetcor")
+        print("Extension installation directory: {}", extdir)
 
-        extdir = pathlib.Path(self.get_ext_fullpath(ext.name))
-        extdir.mkdir(parents=True, exist_ok=True)
-
-        sourcedir = pathlib.Path(ext.sourcedir).absolute()
-        python_bindings_dir = sourcedir.joinpath("python_bindings")
-        copy_tree(python_bindings_dir, str(extdir.parent))
-
-        cfg = "Debug" if self.debug else "Release"
         cmake_args = [
-            f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir.parent.absolute()}",
-            f"-DCMAKE_BUILD_TYPE={cfg}",
+            f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
+            f"-DPYTHON_EXECUTABLE={sys.executable}",
+            f"-DCMAKE_BUILD_TYPE={'Debug' if self.debug else 'Release'}",
         ]
 
-        build_args = ["--config", cfg]
-
-        if platform.system() == "Windows":
-            cmake_args += [
-                "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(
-                    cfg.upper(), extdir.parent
-                )
+        # Add version info
+        version = get_version()
+        version_parts = version.split(".")
+        cmake_args.extend(
+            [
+                f"-DPNC_VERSION_MAJOR={version_parts[0]}",
+                f"-DPNC_VERSION_MINOR={version_parts[1]}",
+                f"-DPNC_VERSION_PATCH={version_parts[2]}",
             ]
-            if sys.maxsize > 2**32:
-                cmake_args += ["-A", "x64"]
-            build_args += ["--", "/m"]
-
-        env = os.environ.copy()
-        env["CXXFLAGS"] = "{} -DVERSION_INFO={}".format(
-            env.get("CXXFLAGS", ""), self.distribution.get_version()
         )
 
-        self.spawn(["cmake", "-B", build_temp] + cmake_args)
-        self.spawn(["cmake", "--build", build_temp] + build_args)
-        os.chdir(str(cwd))
+        # Add environment-specific CMake arguments
+        cmake_args.extend(
+            f"-D{var}={value}" for var, value in cmake_env.items() if value
+        )
+
+        build_args = []
+
+        if platform.system() == "Windows":
+            # Use the default Visual Studio generator and set the architecture
+            # generator = "Visual Studio 16 2019"
+            arch = PLAT_TO_CMAKE.get(self.plat_name, "Win32")
+            # cmake_args += ["-G", generator, "-A", arch]
+            cmake_args += ["-A", arch]
+            build_args += ["--config", "Debug" if self.debug else "Release"]
+        elif platform.system() == "Linux":
+            # Use Unix Makefiles generator for Linux
+            cmake_args += ["-G", "Unix Makefiles"]
+        elif platform.system() == "Darwin":
+            # Use Xcode generator for macOS and set the architecture
+            cmake_args += ["-G", "Xcode"]
+            cmake_args += ["-DCMAKE_OSX_ARCHITECTURES=x86_64"]
+
+        build_args += ["-j", str(os.cpu_count() or 2)]
+
+        if not os.path.exists(self.build_temp):
+            os.makedirs(self.build_temp)
+
+        # Clean existing CMakeCache.txt and CMakeFiles directory
+        clean_cmake_cache(self.build_temp)
+
+        subprocess.check_call(
+            ["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp
+        )
+        subprocess.check_call(
+            ["cmake", "--build", "."] + build_args, cwd=self.build_temp
+        )
+
+
+# Ensure the bdist_wheel command is available
+try:
+    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+
+    class bdist_wheel(_bdist_wheel):
+        def finalize_options(self):
+            super().finalize_options()
+            self.root_is_pure = False
+
+except ImportError:
+    bdist_wheel = None
 
 
 setup(
-    name="pyNetCor",
-    version="0.0.1",
-    author="Long",
-    description="This is a python package for correlation analysis",
-    ext_modules=[CMakeExtension("pyNetCor")],
-    cmdclass={"build_ext": CMakeBuild},
+    name="pynetcor",
+    version=get_version(),
+    author="longshibin",
+    author_email="longshibin@01lifetech.com",
+    description="PyNetCor is a fast Python C++ extension for correlation and network analysis",
+    long_description=read_readme(),
+    long_description_content_type="text/markdown",
+    url="https://github.com/01life/pyNetCor",
+    packages=["pynetcor"],
+    package_data={
+        "pynetcor": ["*.so", "*.pyd", "*.dylib"],
+    },
+    install_requires=["numpy"],
+    ext_modules=[CMakeExtension("pynetcor")],
+    cmdclass={"build_ext": CMakeBuild, "bdist_wheel": bdist_wheel},
+    classifiers=[
+        "Programming Language :: C++",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+    python_requires=">=3.7",
+    license="MIT",
 )

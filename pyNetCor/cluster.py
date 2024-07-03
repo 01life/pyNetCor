@@ -3,8 +3,9 @@ import sys
 import numpy as np
 from numpy import ndarray
 
-sys.path.append("../cmake-build-release/python_bindings")
-from _core import *
+from ._core import *
+
+__all__ = ["Canopy"]
 
 
 class Canopy:
@@ -46,14 +47,14 @@ class Canopy:
     """
 
     def __init__(
-        self,
-        t1: float = 0.2,
-        t2: float = 0.6,
-        max_merge_distance: float = 0.2,
-        stop_criteria: int = 50000,
-        distance_measure: str = "pearson",
-        random_seed: int = None,
-        threads: int = 8,
+            self,
+            t1: float = 0.2,
+            t2: float = 0.6,
+            max_merge_distance: float = 0.2,
+            stop_criteria: int = 50000,
+            distance_measure: str = "pearson",
+            random_seed: int = None,
+            threads: int = 8,
     ):
         self._c = None
         self.t1 = t1

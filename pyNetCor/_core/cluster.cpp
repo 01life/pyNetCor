@@ -184,7 +184,7 @@ private:
 void bind_cluster(py::module &m) {
     py::class_<CanopyCluster>(m, "CanopyCluster")
             .def(py::init<const py::object &, double, double, double, double, size_t, size_t, const std::string &,
-                 std::optional<size_t>, int>(),
+                         std::optional<size_t>, int>(),
                  py::arg("obj"), py::arg("maxCanopyDist"), py::arg("maxCloseDist"), py::arg("maxMergeDist"),
                  py::arg("minStepDist"), py::arg("maxCanopyWalkNum"), py::arg("stopAfterNumSeedsProcessed"),
                  py::arg("distanceMethod"), py::arg("randomSeed"), py::arg("nthreads"))

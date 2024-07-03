@@ -1,32 +1,22 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.15)
+
+project(pynetcor)
 
 set(CMAKE_CXX_STANDARD 17)
+message(STATUS "CMAKE_CXX_STANDARD 17")
 
-project(pyNetCor)
+# Windows ARM64
+if(CMAKE_CXX_COMPILER_ARCHITECTURE_ID MATCHES "ARM64")
+    option(PYBIND11_PYTHONLIBS_OVERWRITE "" OFF)
 
+    set(PYTHON_PREFIX "$ENV{LOCALAPPDATA}/pypa/cibuildwheel/Cache/nuget-cpython/pythonarm64.$ENV{PYTHON_VERSION}/tools")
+    if(NOT DEFINED $ENV{CIBUILDWHEEL})
+        message(WARNING
+                " This is hack for cibuildwheel on github action\n"
+                " Use the right way to cross-compile python module for windows arm64 like follows\n"
+                " set(PYTHON_PREFIX \"<your-pythonarm64-root-path>\")\n"
+        )
+    endif()
+endif()
 
-# OpenMP
-find_package(OpenMP REQUIRED)
-if (OpenMP_FOUND)
-    message(STATUS "OpenMP found")
-    message(STATUS "OpenMP_CXX_FLAGS: ${OpenMP_CXX_FLAGS}")
-    message(STATUS "OpenMP_CXX_LIBRARIES: ${OpenMP_CXX_LIBRARIES}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif ()
-
-
-# OpenBLAS
-find_package(OpenBLAS REQUIRED)
-if (OpenBLAS_FOUND)
-    message(STATUS "OpenBLAS found")
-    message(STATUS "OpenBLAS_INCLUDE_DIRS: ${OpenBLAS_INCLUDE_DIRS}")
-    message(STATUS "OpenBLAS_LIBRARIES: ${OpenBLAS_LIBRARIES}")
-endif ()
-
-# blaze
-#set(BLAZE_INCLUDE_DIR /aimigene/longshibin/cpplib/blaze-3.8.2/include)
-
-include_directories(${OpenBLAS_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
-
-add_subdirectory(python_bindings)
+add_subdirectory(pynetcor)

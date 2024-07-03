@@ -4,15 +4,23 @@ import sys
 import numpy as np
 from numpy import ndarray
 
-sys.path.append(
-    str(Path(__file__).resolve().parent.parent / "cmake-build-release/python_bindings")
-)
+from ._core import *
 
-from _core import *
+__all__ = [
+    "corrcoef",
+    "cortest",
+    "cor_topk",
+    "cor_topkdiff",
+    "chunked_corrcoef",
+    "chunked_cortest",
+    "pvalue_student_t",
+    "CorrcoefIter",
+    "CortestIter",
+]
 
 
 def corrcoef(
-    x, y=None, method: str = "pearson", nan_action: str = "auto", threads: int = 1
+        x, y=None, method: str = "pearson", nan_action: str = "auto", threads: int = 1
 ) -> ndarray:
     """
     Calculate the correlation coefficient between each row of two arrays.
@@ -92,15 +100,15 @@ def pvalue_student_t(x, df: int, approx: bool = True, threads: int = 1) -> ndarr
 
 
 def cortest(
-    x,
-    y=None,
-    method: str = "pearson",
-    na_action="auto",
-    approx_pvalue: bool = True,
-    adjust_pvalue: bool = False,
-    adjust_method: str = "BH",
-    approx_adjust_pvalue: bool = False,
-    threads: int = 1,
+        x,
+        y=None,
+        method: str = "pearson",
+        na_action="auto",
+        approx_pvalue: bool = True,
+        adjust_pvalue: bool = False,
+        adjust_method: str = "BH",
+        approx_adjust_pvalue: bool = False,
+        threads: int = 1,
 ) -> ndarray:
     """
     Testing for correlation between each row of two arrays, using one of pearson, spearman or kendall.
@@ -170,12 +178,12 @@ def cortest(
 
 
 def chunked_corrcoef(
-    x,
-    y=None,
-    method: str = "pearson",
-    nan_action: str = "auto",
-    chunk_size: int = 1024,
-    threads: int = 1,
+        x,
+        y=None,
+        method: str = "pearson",
+        nan_action: str = "auto",
+        chunk_size: int = 1024,
+        threads: int = 1,
 ) -> CorrcoefIter:
     """
     Iterating for correlation between each row of two arrays into chunks.
@@ -226,15 +234,15 @@ def chunked_corrcoef(
 
 
 def chunked_cortest(
-    x,
-    y=None,
-    correlation_method: str = "pearson",
-    na_action: str = "auto",
-    approx_pvalue: bool = True,
-    adjust_pvalue: bool = False,
-    adjust_method: str = "BH",
-    chunk_size: int = 1024,
-    threads: int = 1,
+        x,
+        y=None,
+        correlation_method: str = "pearson",
+        na_action: str = "auto",
+        approx_pvalue: bool = True,
+        adjust_pvalue: bool = False,
+        adjust_method: str = "BH",
+        chunk_size: int = 1024,
+        threads: int = 1,
 ) -> CortestIter:
     """
     Iterating for testing the correlation between each row of two arrays into chunks, using one of pearson, spearman
@@ -303,16 +311,16 @@ def chunked_cortest(
 
 
 def cor_topk(
-    x,
-    y=None,
-    method: str = "pearson",
-    k: float = 0.01,
-    na_action: str = "auto",
-    correlation_mode: str = "both",
-    compute_pvalue: bool = True,
-    approx_pvalue: bool = True,
-    chunk_size: int = 1024,
-    threads: int = 1,
+        x,
+        y=None,
+        method: str = "pearson",
+        k: float = 0.01,
+        na_action: str = "auto",
+        correlation_mode: str = "both",
+        compute_pvalue: bool = True,
+        approx_pvalue: bool = True,
+        chunk_size: int = 1024,
+        threads: int = 1,
 ) -> ndarray:
     """
     Searching the global top k correlations between each row of two arrays, using one of pearson, spearman or kendall.
@@ -385,99 +393,16 @@ def cor_topk(
     )
 
 
-def queue_cor_topk(
-    x,
-    y=None,
-    method: str = "pearson",
-    k: float = 0.01,
-    na_action: str = "auto",
-    correlation_mode: str = "both",
-    compute_pvalue: bool = True,
-    approx_pvalue: bool = True,
-    chunk_size: int = 1024,
-    threads: int = 1,
-) -> ndarray:
-    """
-    Searching the global top k correlations between each row of two arrays, using one of pearson, spearman or kendall.
-
-    Parameters
-    ----------
-    x : array_like
-        A 2-D array.
-    y : array_like, optional
-        A 2-D array. `y` has the same column length as `x`. If not provided, the correlation coefficient will be
-        calculated between `x` and itself.
-    k : float, default 0.01
-       The top k percentage of correlations, where k ranges from 0 to 1, or the top k number of correlations if k
-       exceeds 1.
-    method : {'pearson', 'spearman', 'kendall'}, default 'pearson'
-        The method used to calculate the correlation coefficient.
-    na_action : {'auto', 'ignore', 'fillMean', 'fillMedian'}, default 'auto'
-        The action to take when encountering NaN values.
-        Pearson and Spearman recommend using the ignore method and Kendall recommends using the fillMedian method.
-        The ignore method cannot be used for Kendall.
-
-        * 'ignore': the calculation ignores pairs of elements that contain NaN.
-        * 'fillMean': fills the NaN values in each row with the mean of non-NaN values.
-        * 'fillMedian': fills the NaN values in each row with the median of non-NaN values.
-    correlation_mode : {'positive', 'negative', 'both'}, default 'both'
-        The mode for comparing topk correlations.
-    compute_pvalue : bool, default True
-        Whether to calculate the p-value for each correlation.
-    approx_pvalue : bool, default True
-        Whether to use the approximation method of p-value calculation.
-    chunk_size : int, default 1024
-        `chunk_size` * columns number of `x` to be calculated per chunk.
-    threads : int, default 1
-        The number of threads to use.
-
-    Returns
-    -------
-    ndarray
-        A 2D array with 4 columns: [index1, index2, r, p] or 3 columns: [index1, index2, r] if `compute_pvalue` is False.
-
-    """
-    if k == 0:
-        return np.array([[]])
-    elif k < 0:
-        raise ValueError("The top k must be greater than 0.")
-
-    if na_action == "auto":
-        if method == "pearson" or method == "spearman":
-            na_action = "ignore"
-        else:
-            na_action = "fillMedian"
-
-    if threads < 1:
-        raise ValueError("The number of threads must be greater than 0.")
-
-    if chunk_size < 1:
-        raise ValueError("The chunk size must be greater than 0.")
-
-    return queueCorTopk(
-        x,
-        y,
-        method,
-        k,
-        na_action,
-        correlation_mode,
-        compute_pvalue,
-        approx_pvalue,
-        chunk_size,
-        threads,
-    )
-
-
 def cor_topkdiff(
-    x1,
-    y1,
-    x2=None,
-    y2=None,
-    method: str = "pearson",
-    k: float = 0.01,
-    na_action: str = "auto",
-    chunk_size: int = 1024,
-    threads: int = 1,
+        x1,
+        y1,
+        x2=None,
+        y2=None,
+        method: str = "pearson",
+        k: float = 0.01,
+        na_action: str = "auto",
+        chunk_size: int = 1024,
+        threads: int = 1,
 ) -> ndarray:
     """
     Searching the global top k differences in correlation between pairs of features across two states or timepoints,
