@@ -135,6 +135,56 @@ try:
             super().finalize_options()
             self.root_is_pure = False
 
+        def run(self):
+            super().run()
+
+            # Repair wheel
+            build_lib = self.get_finalized_command("build").build_lib
+            self.extdir = os.path.join(os.path.abspath(build_lib), "pynetcor")
+            self.repair_wheel()
+
+        def repair_wheel(self):
+            wheel_name = self.wheel_dist_name
+            tag = "-".join(self.get_tag())
+            wheel_path = os.path.join(
+                os.path.abspath(self.dist_dir), f"{wheel_name}-{tag}.whl"
+            )
+
+            if platform.system() == "Linux":
+                self.repair_linux_wheel(wheel_path)
+            elif platform.system() == "Windows":
+                self.repair_windows_wheel(wheel_path)
+            elif platform.system() == "Darwin":
+                self.repair_macos_wheel(wheel_path)
+
+        def repair_linux_wheel(self, wheel_path):
+            try:
+                subprocess.run(["auditwheel", "repair", wheel_path], check=True)
+                os.remove(wheel_path)
+            except subprocess.CalledProcessError:
+                print(
+                    "Failed to repair Linux wheel. Make sure auditwheel is installed."
+                )
+
+        def repair_windows_wheel(self, wheel_path):
+            try:
+                subprocess.run(
+                    ["delvewheel", "repair", wheel_path, "--add-path", self.extdir],
+                    check=True,
+                )
+                os.remove(wheel_path)
+            except subprocess.CalledProcessError:
+                print(
+                    "Failed to repair Windows wheel. Make sure delvewheel is installed."
+                )
+
+        def repair_macos_wheel(self, wheel_path):
+            try:
+                subprocess.run(["delocate-wheel", "-v", wheel_path], check=True)
+                os.remove(wheel_path)
+            except subprocess.CalledProcessError:
+                print("Failed to repair macOS wheel. Make sure delocate is installed.")
+
 except ImportError:
     bdist_wheel = None
 
