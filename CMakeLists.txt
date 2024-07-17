@@ -19,4 +19,4 @@ if(CMAKE_CXX_COMPILER_ARCHITECTURE_ID MATCHES "ARM64")
     endif()
 endif()
 
-add_subdirectory(pynetcor)
+add_subdirectory(python)

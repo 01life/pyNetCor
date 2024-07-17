@@ -20,44 +20,6 @@ if (OpenBLAS_FOUND)
     message(STATUS "OpenBLAS_INCLUDE_DIRS: ${OpenBLAS_INCLUDE_DIRS}")
     message(STATUS "OpenBLAS_LIBRARIES: ${OpenBLAS_LIBRARIES}")
 endif ()
-#find_package(OpenBLAS)
-#if (OpenBLAS_FOUND)
-#    # If on Windows and OpenBLAS_LIBRARIES is an empty string
-#    if(WIN32 AND "${OpenBLAS_LIBRARIES}" STREQUAL "")
-#        set(OpenBLAS_LIBRARIES "${OpenBLAS_INCLUDE_DIRS}/../../lib/openblas.lib")
-#        message(WARNING "OpenBLAS_LIBRARIES was empty. Set to default: ${OpenBLAS_LIBRARIES}")
-#    endif()
-#
-#    message(STATUS "OpenBLAS found")
-#    message(STATUS "OpenBLAS_INCLUDE_DIRS: ${OpenBLAS_INCLUDE_DIRS}")
-#    message(STATUS "OpenBLAS_LIBRARIES: ${OpenBLAS_LIBRARIES}")
-#else ()
-#    set(OPENBLAS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/external/OpenBLAS")
-#    set(OPENBLAS_INSTALL_DIR "${CMAKE_BINARY_DIR}/openblas-install")
-#    message(STATUS "OpenBLAS not found, installing to ${OPENBLAS_INSTALL_DIR}")
-#    # Install OpenBLAS
-#    include(ExternalProject)
-#    ExternalProject_Add(OpenBLAS
-#        SOURCE_DIR ${OPENBLAS_SOURCE_DIR}
-#        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${OPENBLAS_INSTALL_DIR}
-#                   -DBUILD_SHARED_LIBS=ON
-#                   -DCMAKE_BUILD_TYPE=Release
-#        BUILD_COMMAND cmake --build <BINARY_DIR> --config Release
-#        INSTALL_COMMAND cmake --install <BINARY_DIR>
-#    )
-#    set(OpenBLAS_INCLUDE_DIRS ${OPENBLAS_INSTALL_DIR}/include/openblas)
-#    if (WIN32)
-#        set(OpenBLAS_LIBRARIES ${OPENBLAS_INSTALL_DIR}/lib/openblas.lib)
-#    elseif (APPLE)
-#        set(OpenBLAS_LIBRARIES ${OPENBLAS_INSTALL_DIR}/lib/libopenblas.dylib)
-#    elseif (UNIX)
-#        set(OpenBLAS_LIBRARIES ${OPENBLAS_INSTALL_DIR}/lib/libopenblas.so)
-#    else()
-#        message(FATAL_ERROR "Unsupported platform")
-#    endif()
-#    message(STATUS "OpenBLAS_INCLUDE_DIRS: ${OpenBLAS_INCLUDE_DIRS}")
-#    message(STATUS "OpenBLAS_LIBRARIES: ${OpenBLAS_LIBRARIES}")
-#endif ()
 
 set(SOURCES cor.cpp padjusttable.cpp ptable.cpp util.cpp cluster.cpp)
 

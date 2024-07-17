@@ -199,6 +199,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/01life/pyNetCor",
     packages=["pynetcor"],
+    package_dir={"pynetcor": "python"},
     package_data={
         "pynetcor": ["*.so", "*.pyd", "*.dylib"],
     },
