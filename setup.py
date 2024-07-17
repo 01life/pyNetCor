@@ -2,7 +2,7 @@ import os
 import sys
 import platform
 import subprocess
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 
 
@@ -35,7 +35,6 @@ def clean_cmake_cache(build_temp):
 
 # Parse environment variables
 CMAKE_ENV_VARS = [
-    "CMAKE_TOOLCHAIN_FILE",
     "PLATFORM",
     "ARCHS",
     "DEPLOYMENT_TARGET",
@@ -43,6 +42,7 @@ CMAKE_ENV_VARS = [
     "OpenMP_CXX_FLAGS",
     "OpenMP_C_LIB_NAMES",
     "OpenMP_CXX_LIB_NAMES",
+    "OpenMP_ROOT",
     "OpenMP_libomp_LIBRARY",
 ]
 cmake_env = {var: os.environ.get(var, "") for var in CMAKE_ENV_VARS}
@@ -76,6 +76,34 @@ class CMakeBuild(build_ext):
             f"-DPYTHON_EXECUTABLE={sys.executable}",
             f"-DCMAKE_BUILD_TYPE={'Debug' if self.debug else 'Release'}",
         ]
+        if cmake_env["PLATFORM"] != "":
+            cmake_args.append("-DPLATFORM=" + cmake_env["PLATFORM"])
+        if cmake_env["ARCHS"] != "":
+            cmake_args.append("-DARCHS=" + cmake_env["ARCHS"])
+        if cmake_env["DEPLOYMENT_TARGET"] != "":
+            cmake_args.append("-DDEPLOYMENT_TARGET=" + cmake_env["DEPLOYMENT_TARGET"])
+        if cmake_env["OpenMP_C_FLAGS"] != "":
+            cmake_args.append("-DOpenMP_C_FLAGS=" + cmake_env["OpenMP_C_FLAGS"])
+            print(f"OpenMP_C_FLAGS: {cmake_env['OpenMP_C_FLAGS']}")
+        if cmake_env["OpenMP_CXX_FLAGS"] != "":
+            cmake_args.append("-DOpenMP_CXX_FLAGS=" + cmake_env["OpenMP_CXX_FLAGS"])
+            print(f"OpenMP_CXX_FLAGS: {cmake_env['OpenMP_CXX_FLAGS']}")
+        if cmake_env["OpenMP_C_LIB_NAMES"] != "":
+            cmake_args.append("-DOpenMP_C_LIB_NAMES=" + cmake_env["OpenMP_C_LIB_NAMES"])
+            print(f"OpenMP_C_LIB_NAMES: {cmake_env['OpenMP_C_LIB_NAMES']}")
+        if cmake_env["OpenMP_CXX_LIB_NAMES"] != "":
+            cmake_args.append(
+                "-DOpenMP_CXX_LIB_NAMES=" + cmake_env["OpenMP_CXX_LIB_NAMES"]
+            )
+            print(f"OpenMP_CXX_LIB_NAMES: {cmake_env['OpenMP_CXX_LIB_NAMES']}")
+        if cmake_env["OpenMP_ROOT"] != "":
+            cmake_args.append("-DOpenMP_ROOT=" + cmake_env["OpenMP_ROOT"])
+            print(f"OpenMP_ROOT: {cmake_env['OpenMP_ROOT']}")
+        if cmake_env["OpenMP_libomp_LIBRARY"] != "":
+            cmake_args.append(
+                "-DOpenMP_libomp_LIBRARY=" + cmake_env["OpenMP_libomp_LIBRARY"]
+            )
+            print(f"OpenMP_libomp_LIBRARY: {cmake_env['OpenMP_libomp_LIBRARY']}")
 
         # Add version info
         version = get_version()
@@ -88,18 +116,17 @@ class CMakeBuild(build_ext):
             ]
         )
 
-        # Add environment-specific CMake arguments
-        cmake_args.extend(
-            f"-D{var}={value}" for var, value in cmake_env.items() if value
-        )
-
         build_args = []
 
         if platform.system() == "Windows":
+            if cmake_env["PLATFORM"] != "":
+                self.plat_name = cmake_env["PLATFORM"]
+                if self.plat_name not in PLAT_TO_CMAKE:
+                    raise ValueError(
+                        f"PLATFORM '{self.plat_name}' is not supported, PLATFORM must be one of {list(PLAT_TO_CMAKE.keys())}",
+                    )
             # Use the default Visual Studio generator and set the architecture
-            # generator = "Visual Studio 16 2019"
             arch = PLAT_TO_CMAKE.get(self.plat_name, "Win32")
-            # cmake_args += ["-G", generator, "-A", arch]
             cmake_args += ["-A", arch]
             build_args += ["--config", "Debug" if self.debug else "Release"]
         elif platform.system() == "Linux":
@@ -108,7 +135,6 @@ class CMakeBuild(build_ext):
         elif platform.system() == "Darwin":
             # Use Xcode generator for macOS and set the architecture
             cmake_args += ["-G", "Xcode"]
-            cmake_args += ["-DCMAKE_OSX_ARCHITECTURES=x86_64"]
 
         build_args += ["-j", str(os.cpu_count() or 2)]
 
@@ -151,11 +177,13 @@ try:
             )
 
             if platform.system() == "Linux":
-                self.repair_linux_wheel(wheel_path)
+                # self.repair_linux_wheel(wheel_path)
+                pass
             elif platform.system() == "Windows":
                 self.repair_windows_wheel(wheel_path)
             elif platform.system() == "Darwin":
-                self.repair_macos_wheel(wheel_path)
+                # self.repair_macos_wheel(wheel_path)
+                pass
 
         def repair_linux_wheel(self, wheel_path):
             try:
