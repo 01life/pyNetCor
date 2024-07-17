@@ -69,7 +69,7 @@ class CMakeBuild(build_ext):
 
         # Ensure the extension is built directly in the package directory
         extdir = os.path.join(extdir, "pynetcor")
-        print("Extension installation directory: {}", extdir)
+        print("Extension installation directory: ", extdir)
 
         cmake_args = [
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
@@ -176,28 +176,13 @@ try:
                 os.path.abspath(self.dist_dir), f"{wheel_name}-{tag}.whl"
             )
 
-            if platform.system() == "Linux":
-                # self.repair_linux_wheel(wheel_path)
-                pass
-            elif platform.system() == "Windows":
+            if platform.system() == "Windows":
                 self.repair_windows_wheel(wheel_path)
-            elif platform.system() == "Darwin":
-                # self.repair_macos_wheel(wheel_path)
-                pass
-
-        def repair_linux_wheel(self, wheel_path):
-            try:
-                subprocess.run(["auditwheel", "repair", wheel_path], check=True)
-                os.remove(wheel_path)
-            except subprocess.CalledProcessError:
-                print(
-                    "Failed to repair Linux wheel. Make sure auditwheel is installed."
-                )
 
         def repair_windows_wheel(self, wheel_path):
             try:
                 subprocess.run(
-                    ["delvewheel", "repair", wheel_path, "--add-path", self.extdir],
+                    ["delvewheel", "repair", wheel_path],
                     check=True,
                 )
                 os.remove(wheel_path)
@@ -206,16 +191,8 @@ try:
                     "Failed to repair Windows wheel. Make sure delvewheel is installed."
                 )
 
-        def repair_macos_wheel(self, wheel_path):
-            try:
-                subprocess.run(["delocate-wheel", "-v", wheel_path], check=True)
-                os.remove(wheel_path)
-            except subprocess.CalledProcessError:
-                print("Failed to repair macOS wheel. Make sure delocate is installed.")
-
 except ImportError:
     bdist_wheel = None
-
 
 setup(
     name="pynetcor",
