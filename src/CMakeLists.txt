@@ -23,7 +23,7 @@ endif ()
 
 set(SOURCES cor.cpp padjusttable.cpp ptable.cpp util.cpp cluster.cpp)
 
-add_library(netcor SHARED ${SOURCES})
+add_library(netcor STATIC ${SOURCES})
 set_target_properties(netcor PROPERTIES
         WINDOWS_EXPORT_ALL_SYMBOLS ON
         MACOSX_RPATH ON
