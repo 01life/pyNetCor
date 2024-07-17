@@ -1,0 +1,13 @@
+build/
+cmake-build-debug/
+cmake-build-release/
+dist/
+pynetcor.egg-info/
+wheelhouse/
+build_wheel_linux.sh
+build_wheel_win.sh
+unittest_win.sh
+unittest_linux.sh
+python/__pycache__/
+.pytest_cache
+tests/__pycache__/
