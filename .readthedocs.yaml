@@ -8,6 +8,7 @@ build:
 python:
   install:
     - requirements: doc/source/requirements-rtd.txt
+    - requirements: requirements.txt
 
 sphinx:
   builder: html
