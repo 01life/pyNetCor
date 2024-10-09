@@ -62,4 +62,13 @@ namespace util {
         return indices;
     }
 
+    void symm_matrix(double *X, int n, int nthreads) {
+#pragma omp parallel for schedule(dynamic) num_threads(nthreads)
+        for (int64_t i = 0; i < n; ++i) {
+            for (int64_t j = 0; j < i; ++j) {
+                X[i * n + j] = X[j * n + i];
+            }
+        }
+    }
+
 } // namespace util

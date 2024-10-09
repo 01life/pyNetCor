@@ -21,6 +21,9 @@ namespace util {
 
     std::vector<size_t> argSort(const double* v, size_t n, bool decreasing = false);
 
+    // Symmetrize matrix X, where X[i, j] = X[j, i]
+    void symm_matrix(double *X, int n, int nthreads);
+
     inline size_t transFullMatIndex(size_t i, size_t j, size_t colNum) {
         return i * colNum + j - (i + 1) * (i + 2) / 2;
     }

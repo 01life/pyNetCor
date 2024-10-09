@@ -28,10 +28,7 @@ public:
             : X_(std::move(X)), Y_(std::move(Y)), method_(method), chunkSize_(chunkSize), nthreads_(nthreads) {
         preprocess(X_, method_, nthreads_);
 
-        if (Y_.isEmpty()) {
-            isYEmpty_ = true;
-            Y_ = X_;
-        } else {
+        if (!Y_.isEmpty()) {
             preprocess(Y_, method_, nthreads_);
         }
     }
@@ -43,22 +40,50 @@ public:
 
         //  adjust chunk size to fit within X
         size_t currentChunkSize = std::min(chunkSize_, X_.rows() - nextIndex_);
+        size_t resultCols = Y_.isEmpty() ? X_.rows() : Y_.rows();
 
         // initialize resultIter with chunkSize_ rows
         auto resultIter = py_cdarray_t(
-                {currentChunkSize, Y_.rows()},
-                {Y_.rows() * sizeof(double), sizeof(double)}
+                {currentChunkSize, resultCols},
+                {resultCols * sizeof(double), sizeof(double)}
         );
 
         if (method_ == CorrelationMethod::Pearson || method_ == CorrelationMethod::Spearman) {
             size_t m = currentChunkSize;
             size_t k = X_.cols();
-            size_t n = Y_.rows();
 
             openblas_set_num_threads(nthreads_);
-            cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, m, n, k, 1.0, X_.row(nextIndex_), X_.cols(),
-                        Y_.data(), Y_.cols(), 0.0, resultIter.mutable_data(), n);
+            if (Y_.isEmpty()) {
+                auto result = resultIter.mutable_unchecked<2>();
 
+                Matrix<double> syrkMatrix(currentChunkSize, currentChunkSize);
+                cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans, m, k, 1.0, X_.row(nextIndex_), X_.cols(),
+                            0.0, syrkMatrix.data(), m);
+
+                Matrix<double> symmMatrix;
+                if (nextIndex_ + currentChunkSize < X_.rows()) {
+                    symmMatrix = Matrix<double>(currentChunkSize, X_.rows() - nextIndex_ - currentChunkSize);
+                    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, m, X_.rows() - nextIndex_ - currentChunkSize,
+                                k, 1.0, X_.row(nextIndex_), X_.cols(), X_.row(nextIndex_ + currentChunkSize),
+                                X_.cols(), 0.0, symmMatrix.data(), X_.rows() - nextIndex_ - currentChunkSize);
+                }
+
+#pragma omp parallel for schedule(dynamic) num_threads(nthreads_)
+                for (int64_t i = 0; i < currentChunkSize; ++i) {
+                    for (size_t j = 0; j < X_.rows(); ++j) {
+                        if (j < i + nextIndex_) {
+                            result(i, j) = std::numeric_limits<double>::quiet_NaN();
+                        } else if (j < nextIndex_ + currentChunkSize) {
+                            result(i, j) = syrkMatrix(i, j - nextIndex_);
+                        } else {
+                            result(i, j) = symmMatrix(i, j - nextIndex_ - currentChunkSize);
+                        }
+                    }
+                }
+            } else {
+                cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, m, Y_.rows(), k, 1.0, X_.row(nextIndex_), X_.cols(),
+                            Y_.data(), Y_.cols(), 0.0, resultIter.mutable_data(), Y_.rows());
+            }
         } else if (method_ == CorrelationMethod::Kendall) {
             auto result = resultIter.mutable_unchecked<2>();
 
@@ -366,6 +391,8 @@ py_cdarray_t corTopk(const py::object &xobj, const std::optional<py::object> &yo
 
         totalCors = X.rows() * Y.rows();
         topkCorsSize = k > 1 ? static_cast<size_t>(k) : std::floor(totalCors * k);
+    } else {
+        Y = X;
     }
 
     // declare a priority_queue to store top-k correlations in ascending order
@@ -479,9 +506,9 @@ struct CorDiff {
 };
 
 py_cdarray_t corTopkDiff(const py::object &xobj1, const py::object &yobj1,
-                              const std::optional<py::object> &xobj2, const std::optional<py::object> &yobj2,
-                              const std::string &method, double k, const std::string &naAction,
-                              size_t chunkSize, int nthreads) {
+                        const std::optional<py::object> &xobj2, const std::optional<py::object> &yobj2,
+                        const std::string &method, double k, const std::string &naAction,
+                        size_t chunkSize, int nthreads) {
     auto corMethod = stringToCorrelationMethod(method);
     auto naMethod = stringToNAMethod(naAction);
 

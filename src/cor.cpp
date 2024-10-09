@@ -16,7 +16,6 @@ void CorPearson::parallelCalcCor(Matrix<double> &X, Matrix<double> &Y, double *r
     size_t k = X.cols();
     size_t n, otherRows;
     if (Y.isEmpty()) {
-        Y = X;
         n = X.rows();
         otherRows = X.cols();
     } else {
@@ -30,8 +29,14 @@ void CorPearson::parallelCalcCor(Matrix<double> &X, Matrix<double> &Y, double *r
     }
 
     openblas_set_num_threads(nthreads);
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, m, n, k, 1.0, X.data(), X.cols(),
-                Y.data(), Y.cols(), 0.0, result, n);
+    if (Y.isEmpty()) {
+        cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans, m, k, 1.0, X.data(),
+                    k, 0.0, result, m);
+        util::symm_matrix(result, m, nthreads);
+    } else {
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, m, n, k, 1.0, X.data(), X.cols(),
+                    Y.data(), Y.cols(), 0.0, result, n);
+    }
 }
 
 double CorPearson::calcCor(double *x, double *y, size_t n) {
@@ -111,7 +116,7 @@ void CorSpearman::parallelCalcCor(Matrix<double> &X, Matrix<double> &Y, double *
 
     Matrix<double> Y_ranked;
     if (Y.isEmpty()) {
-        Y_ranked = X_ranked;
+        Y_ranked = Y;
     } else {
         Y_ranked = util::parallelNanRank(Y, nthreads);
     }
