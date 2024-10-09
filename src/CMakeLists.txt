@@ -1,13 +1,3 @@
-# OpenMP
-find_package(OpenMP REQUIRED)
-if (OpenMP_FOUND)
-    message(STATUS "OpenMP found")
-    message(STATUS "OpenMP_CXX_FLAGS: ${OpenMP_CXX_FLAGS}")
-    message(STATUS "OpenMP_CXX_LIBRARIES: ${OpenMP_CXX_LIBRARIES}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif ()
-
 # OpenBLAS
 find_package(OpenBLAS REQUIRED)
 if(WIN32)
@@ -31,7 +21,7 @@ message(STATUS "OpenBLAS_LIBRARIES: ${OpenBLAS_LIBRARIES}")
 
 set(SOURCES cor.cpp padjusttable.cpp ptable.cpp util.cpp cluster.cpp)
 
-add_library(netcor STATIC ${SOURCES})
+add_library(netcor SHARED ${SOURCES})
 
 # Set properties for netcor
 set_target_properties(netcor PROPERTIES

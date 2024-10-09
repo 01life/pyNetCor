@@ -1,3 +1,13 @@
+# OpenMP
+find_package(OpenMP REQUIRED)
+if (OpenMP_FOUND)
+    message(STATUS "OpenMP found")
+    message(STATUS "OpenMP_CXX_FLAGS: ${OpenMP_CXX_FLAGS}")
+    message(STATUS "OpenMP_CXX_LIBRARIES: ${OpenMP_CXX_LIBRARIES}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif ()
+
 if("${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" STREQUAL "")
     if(MSVC OR CMAKE_GENERATOR STREQUAL "Xcode")
         set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pynetcor/)
