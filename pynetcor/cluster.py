@@ -1,8 +1,3 @@
-import sys
-
-import numpy as np
-from numpy import ndarray
-
 from ._core import *
 
 __all__ = ["Canopy"]
@@ -12,49 +7,39 @@ class Canopy:
     """
     Canopy clustering.
 
-    Parameters:
+    Parameters
     ----------
-    t2: float, optional, default 0.2
+    t2 : float, optional, default 0.2
         Max tight distance (correlation difference). If the distance from a point to the canopyis is less
         than t2, the point is closed enough to the canopy center and is removed from the dataset.
-    t1: float, optional, default 0.6
+    t1 : float, optional, default 0.6
         Max loose distance (correlation difference). If the distance from a point to the canopy is less
         than t1, the point is considered to be in the canopy.
-    max_merge_distance: float, optional, default 0.2
+    max_merge_distance : float, optional, default 0.2
         The maximum distance (correlation difference) between two canopy centers for merging the canopies
         should be noted. It is important to mention that the final canopy profiles are calculated after
         the merge step, and as a result, some final canopies may have profiles that are closer than the
         specified `max_merge_distance`.
-    stop_criteria: int, optional, default 50000
+    stop_criteria : int, optional, default 50000
         The clustering process will terminate after processing a specified number of seeds according to
         the stop criteria. Setting it to 0 will disable this particular stopping criterion.
-    distance_measure: {'pearson', 'spearman'}, default 'pearson'
+    distance_measure : {'pearson', 'spearman'}, default 'pearson'
         The specified distance measure is utilized for clustering.
-    random_seed: int, optional, default None
+    random_seed : int, optional, default None
         The random seed is utilized to shuffle the data prior to clustering.
-    threads: int, optional, default 8
+    threads : int, optional, default 8
         The number of threads to use.
-
-    Attributes:
-    ----------
-    cluster_centers_: ndarray
-        The cluster centers.
-    labels_: List[List[int]]
-        Label of each point. Each point may belongs to a set of canopies (soft clustering).
-    best_labels_: ndarray
-        Label of each point. Each point may belongs to a set of canopies, the best label is
-        is determined by minimizing the distance to the cluster center.
     """
 
     def __init__(
-            self,
-            t1: float = 0.2,
-            t2: float = 0.6,
-            max_merge_distance: float = 0.2,
-            stop_criteria: int = 50000,
-            distance_measure: str = "pearson",
-            random_seed: int = None,
-            threads: int = 8,
+        self,
+        t1: float = 0.2,
+        t2: float = 0.6,
+        max_merge_distance: float = 0.2,
+        stop_criteria: int = 50000,
+        distance_measure: str = "pearson",
+        random_seed: int = None,
+        threads: int = 8,
     ):
         self._c = None
         self.t1 = t1
@@ -83,7 +68,7 @@ class Canopy:
         """
         Compute canopy clustering.
 
-        Parameters:
+        Parameters
         ----------
             x : array_like
                 A 2-D array. Training data to cluster.
@@ -105,10 +90,15 @@ class Canopy:
         """
         Computing the centroids of clusters and predicting the cluster assignment for each sample.
 
-        Parameters:
+        Parameters
         ----------
             x : array_like
                 A 2-D array. Training data to cluster.
+
+        Returns
+        -------
+            ndarray
+                Cluster assignment for each sample.
         """
         self.fit(x)
         return self._c.get_labels()
@@ -117,21 +107,39 @@ class Canopy:
         """
         Predict the cluster that each sample in `x` is most likely to belong to.
 
-        Parameters:
+        Parameters
         ----------
             x : array_like
                 A 2-D array. New data to predict.
+
+        Returns
+        -------
+            ndarray
+                Cluster assignment for each sample.
         """
         return self._c.predict(x)
 
     @property
     def labels_(self):
+        """
+        Label of each point. Each point may belongs to a set of canopies (soft clustering).
+        List[List[int]]
+        """
         return self._c.get_labels()
 
     @property
     def best_labels_(self):
+        """
+        Label of each point. Each point may belongs to a set of canopies, the best label is
+        is determined by minimizing the distance to the cluster center.
+        ndarray
+        """
         return self._c.get_best_labels()
 
     @property
     def cluster_centers_(self):
+        """
+        The cluster centers.
+        ndarray.
+        """
         return self._c.get_cluster_centers()

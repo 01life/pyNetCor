@@ -1,5 +1,4 @@
-from pathlib import Path
-import sys
+from typing import Any, Iterator
 
 import numpy as np
 from numpy import ndarray
@@ -14,13 +13,11 @@ __all__ = [
     "chunked_corrcoef",
     "chunked_cortest",
     "pvalue_student_t",
-    "CorrcoefIter",
-    "CortestIter",
 ]
 
 
 def corrcoef(
-        x, y=None, method: str = "pearson", nan_action: str = "auto", threads: int = 1
+    x, y=None, method: str = "pearson", nan_action: str = "auto", threads: int = 1
 ) -> ndarray:
     """
     Calculate the correlation coefficient between each row of two arrays.
@@ -100,15 +97,15 @@ def pvalue_student_t(x, df: int, approx: bool = True, threads: int = 1) -> ndarr
 
 
 def cortest(
-        x,
-        y=None,
-        method: str = "pearson",
-        na_action="auto",
-        approx_pvalue: bool = True,
-        adjust_pvalue: bool = False,
-        adjust_method: str = "BH",
-        approx_adjust_pvalue: bool = False,
-        threads: int = 1,
+    x,
+    y=None,
+    method: str = "pearson",
+    na_action="auto",
+    approx_pvalue: bool = True,
+    adjust_pvalue: bool = False,
+    adjust_method: str = "BH",
+    approx_adjust_pvalue: bool = False,
+    threads: int = 1,
 ) -> ndarray:
     """
     Testing for correlation between each row of two arrays, using one of pearson, spearman or kendall.
@@ -177,14 +174,62 @@ def cortest(
     )
 
 
+class CorrcoefIterator:
+    def __init__(self, iter):
+        self._cpp_object = iter
+
+    def __iter__(self) -> Iterator[Any]:
+        return self
+
+    def __next__(self) -> Any:
+        """
+        Get the next item from the iterator.
+
+        Returns:
+            Any: The next item in the iteration.
+
+        Raises:
+            StopIteration: When there are no more items to return.
+        """
+        try:
+            return next(self._cpp_object)
+        except Exception as e:
+            # Assuming the C++ code raises an exception to indicate the end of iteration
+            raise StopIteration from e
+
+
+class CortestIterator:
+    def __init__(self, iter):
+        self._cpp_object = iter
+
+    def __iter__(self) -> Iterator[Any]:
+        return self
+
+    def __next__(self) -> Any:
+        """
+        Get the next item from the iterator.
+
+        Returns:
+            Any: The next item in the iteration.
+
+        Raises:
+            StopIteration: When there are no more items to return.
+        """
+        try:
+            return next(self._cpp_object)
+        except Exception as e:
+            # Assuming the C++ code raises an exception to indicate the end of iteration
+            raise StopIteration from e
+
+
 def chunked_corrcoef(
-        x,
-        y=None,
-        method: str = "pearson",
-        nan_action: str = "auto",
-        chunk_size: int = 1024,
-        threads: int = 1,
-) -> CorrcoefIter:
+    x,
+    y=None,
+    method: str = "pearson",
+    nan_action: str = "auto",
+    chunk_size: int = 1024,
+    threads: int = 1,
+) -> CorrcoefIterator:
     """
     Iterating for correlation between each row of two arrays into chunks.
 
@@ -230,20 +275,22 @@ def chunked_corrcoef(
     if chunk_size < 1:
         raise ValueError("The chunk size must be greater than 0.")
 
-    return chunkedCorrcoef(x, y, method, nan_action, chunk_size, threads)
+    return CorrcoefIterator(
+        chunkedCorrcoef(x, y, method, nan_action, chunk_size, threads)
+    )
 
 
 def chunked_cortest(
-        x,
-        y=None,
-        correlation_method: str = "pearson",
-        na_action: str = "auto",
-        approx_pvalue: bool = True,
-        adjust_pvalue: bool = False,
-        adjust_method: str = "BH",
-        chunk_size: int = 1024,
-        threads: int = 1,
-) -> CortestIter:
+    x,
+    y=None,
+    correlation_method: str = "pearson",
+    na_action: str = "auto",
+    approx_pvalue: bool = True,
+    adjust_pvalue: bool = False,
+    adjust_method: str = "BH",
+    chunk_size: int = 1024,
+    threads: int = 1,
+) -> CortestIterator:
     """
     Iterating for testing the correlation between each row of two arrays into chunks, using one of pearson, spearman
     or kendall.
@@ -297,30 +344,32 @@ def chunked_cortest(
     if chunk_size < 1:
         raise ValueError("The chunk size must be greater than 0.")
 
-    return chunkedCortest(
-        x,
-        y,
-        correlation_method,
-        na_action,
-        approx_pvalue,
-        adjust_pvalue,
-        adjust_method,
-        chunk_size,
-        threads,
+    return CortestIterator(
+        chunkedCortest(
+            x,
+            y,
+            correlation_method,
+            na_action,
+            approx_pvalue,
+            adjust_pvalue,
+            adjust_method,
+            chunk_size,
+            threads,
+        )
     )
 
 
 def cor_topk(
-        x,
-        y=None,
-        method: str = "pearson",
-        k: float = 0.01,
-        na_action: str = "auto",
-        correlation_mode: str = "both",
-        compute_pvalue: bool = True,
-        approx_pvalue: bool = True,
-        chunk_size: int = 1024,
-        threads: int = 1,
+    x,
+    y=None,
+    method: str = "pearson",
+    k: float = 0.01,
+    na_action: str = "auto",
+    correlation_mode: str = "both",
+    compute_pvalue: bool = True,
+    approx_pvalue: bool = True,
+    chunk_size: int = 1024,
+    threads: int = 1,
 ) -> ndarray:
     """
     Searching the global top k correlations between each row of two arrays, using one of pearson, spearman or kendall.
@@ -394,15 +443,15 @@ def cor_topk(
 
 
 def cor_topkdiff(
-        x1,
-        y1,
-        x2=None,
-        y2=None,
-        method: str = "pearson",
-        k: float = 0.01,
-        na_action: str = "auto",
-        chunk_size: int = 1024,
-        threads: int = 1,
+    x1,
+    y1,
+    x2=None,
+    y2=None,
+    method: str = "pearson",
+    k: float = 0.01,
+    na_action: str = "auto",
+    chunk_size: int = 1024,
+    threads: int = 1,
 ) -> ndarray:
     """
     Searching the global top k differences in correlation between pairs of features across two states or timepoints,
