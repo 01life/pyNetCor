@@ -25,13 +25,15 @@ pip install pynetcor
 
 ## Quick Start
 
+We provide a [demo notebook](doc/notebooks/demo.ipynb) to help you quickly understand how to use this project.
+
 ### Create Data
 
 ```python
 import numpy as np
 
-features = 100000
-sampes = 100
+features = 1000
+samples = 100
 arr1 = np.random.random((features, samples))
 arr2 = np.random.random((features, samples))
 ```
@@ -116,10 +118,10 @@ pvalue_result = pvalue_student_t(cor_result, df=samples-2, approx=False, threads
 from pynetcor.cor import cortest, chunked_cortest
 
 # Pearson correlation & P-value approximation
-cortest_result = cortest(arr1, approx=True, threads=8)
+cortest_result = cortest(arr1, approx_pvalue=True, threads=8)
 
 # chunking computation, recommended for large-scale analysis that exceed RAM
-for iter in chunked_cortest(arr1, approx=True, threads=8):
+for iter in chunked_cortest(arr1, approx_pvalue=True, threads=8):
     for (row_index, col_index, correlation, pvalue) in iter:
         ...
         
