@@ -164,3 +164,7 @@ Based on these observations, we can provide users with recommendations for optim
 1. **Start with a moderate `chunk_size`:** Begin with a `chunk_size` around 500-750. This range typically offers a good balance between runtime performance and memory usage.
 2. **Consider your dataset size:** For smaller datasets (e.g., 70,000-90,000 features), you may be able to use larger `chunk_size` without excessive memory consumption. This can potentially speed up processing times. However, for very large datasets (150,000+ features), you might need to use smaller `chunk_size` to manage memory constraints effectively. Always monitor system resources when working with large datasets.
 3. **Fine-tune for your specific use case:** The optimal `chunk_size` can vary depending on your dataset size and available RAM. We recommend referring to our experimental results to guide your configuration. As a default setting designed to accommodate most analytical needs, we use a default `chunk_size` = 512. However, don't hesitate to adjust this based on your specific requirements and system capabilities.
+
+## Citation
+If you use pyNetCor in your research, please cite the publication: [PyNetCor: a high-performance Python package for large-scale correlation analysis](https://doi.org/10.1093/nargab/lqae177).
+> Shibin Long, Yan Xia, Lifeng Liang, Ying Yang, Hailiang Xie, Xiaokai Wang, PyNetCor: a high-performance Python package for large-scale correlation analysis, NAR Genomics and Bioinformatics, Volume 6, Issue 4, December 2024, lqae177, https://doi.org/10.1093/nargab/lqae177
