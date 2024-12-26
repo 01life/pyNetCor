@@ -7,8 +7,10 @@ elseif(APPLE)
     find_library(OpenBLAS_LIB NAMES libopenblas openblas
             HINTS ${OpenBLAS_INCLUDE_DIRS}/../../lib ${OpenBLAS_INCLUDE_DIRS}/../../lib64)
 elseif(UNIX)
+    find_package(PkgConfig REQUIRED)
+    pkg_search_module(OpenBLAS REQUIRED openblas)
     find_library(OpenBLAS_LIB NAMES libopenblas openblas
-                        HINTS ${OpenBLAS_INCLUDE_DIRS}/../../lib ${OpenBLAS_INCLUDE_DIRS}/../../lib64)
+            HINTS ${OpenBLAS_INCLUDE_DIRS}/../../lib ${OpenBLAS_INCLUDE_DIRS}/../../lib64)
 endif()
 if(OpenBLAS_LIB)
     set(OpenBLAS_LIBRARIES ${OpenBLAS_LIB})

@@ -205,9 +205,9 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/01life/pyNetCor",
     packages=["pynetcor"],
-    package_data={
-        "pynetcor": ["*.so", "*.pyd", "*.dylib"],
-    },
+    # package_data={
+    #     "pynetcor": ["*.so", "*.pyd", "*.dylib"],
+    # },
     install_requires=["numpy"],
     ext_modules=[CMakeExtension("pynetcor")],
     cmdclass={"build_ext": CMakeBuild, "bdist_wheel": bdist_wheel},
