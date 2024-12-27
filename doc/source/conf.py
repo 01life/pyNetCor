@@ -15,6 +15,17 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../../"))
 
+# -- Read version from version.txt -----------------------------------------
+
+
+def get_version():
+    if os.getenv("RELEASE_VERSION"):
+        version = os.environ["RELEASE_VERSION"]
+    else:
+        with open(os.path.join(os.path.abspath("../../"), "version.txt"), "r") as f:
+            version = f.read().strip()
+    return version.lstrip("v")
+
 
 # -- Project information -----------------------------------------------------
 
@@ -23,7 +34,7 @@ copyright = "2023, longshibin"
 author = "longshibin"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.0"
+release = get_version()
 
 
 # -- General configuration ---------------------------------------------------
