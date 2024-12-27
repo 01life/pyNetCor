@@ -1,9 +1,11 @@
 # OpenBLAS
-find_package(OpenBLAS REQUIRED)
 if(WIN32)
+    find_package(PkgConfig REQUIRED)
+    pkg_search_module(OpenBLAS REQUIRED openblas)
     find_library(OpenBLAS_LIB NAMES libopenblas openblas
             HINTS ${OpenBLAS_INCLUDE_DIRS}/../../lib ${OpenBLAS_INCLUDE_DIRS}/../../lib64)
 elseif(APPLE)
+    find_package(OpenBLAS REQUIRED)
     find_library(OpenBLAS_LIB NAMES libopenblas openblas
             HINTS ${OpenBLAS_INCLUDE_DIRS}/../../lib ${OpenBLAS_INCLUDE_DIRS}/../../lib64)
 elseif(UNIX)
@@ -30,12 +32,8 @@ set_target_properties(netcor PROPERTIES
         WINDOWS_EXPORT_ALL_SYMBOLS ON
         MACOSX_RPATH ON
         POSITION_INDEPENDENT_CODE ON
-        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
-        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
-        ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
-        ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
-        LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
-        LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/build"
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/build"
 )
 # Include directories and link libraries
 target_include_directories(netcor PUBLIC

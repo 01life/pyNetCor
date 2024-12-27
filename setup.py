@@ -165,33 +165,6 @@ try:
         def run(self):
             super().run()
 
-            # Repair wheel
-            build_lib = self.get_finalized_command("build").build_lib
-            self.extdir = os.path.join(os.path.abspath(build_lib), "pynetcor")
-            self.repair_wheel()
-
-        def repair_wheel(self):
-            wheel_name = self.wheel_dist_name
-            tag = "-".join(self.get_tag())
-            wheel_path = os.path.join(
-                os.path.abspath(self.dist_dir), f"{wheel_name}-{tag}.whl"
-            )
-
-            if platform.system() == "Windows":
-                self.repair_windows_wheel(wheel_path)
-
-        def repair_windows_wheel(self, wheel_path):
-            try:
-                subprocess.run(
-                    ["delvewheel", "repair", wheel_path],
-                    check=True,
-                )
-                os.remove(wheel_path)
-            except subprocess.CalledProcessError:
-                print(
-                    "Failed to repair Windows wheel. Make sure delvewheel is installed."
-                )
-
 except ImportError:
     bdist_wheel = None
 
